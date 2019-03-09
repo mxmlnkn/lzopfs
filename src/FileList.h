@@ -2,9 +2,9 @@
 #define FILELIST_H
 
 #include "CompressedFile.h"
-#include "TR1.h"
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <stdint.h>
@@ -14,26 +14,26 @@ private:
 	// Disable copying
 	FileList(const FileList& o);
 	FileList& operator=(const FileList& o);
-	
+
 protected:
-	typedef unordered_map<std::string,CompressedFile*> Map;
+	typedef std::unordered_map<std::string,CompressedFile*> Map;
 	Map mMap;
 	uint64_t mMaxBlockSize;
-	
+
 	typedef CompressedFile* (*OpenFunc)(const std::string& path,
 		uint64_t maxBlock);
 	typedef std::vector<OpenFunc> OpenerList;
 	static const OpenerList Openers;
 	static OpenerList initOpeners();
-	
+
 public:
 	FileList(uint64_t maxBlockSize = UINT64_MAX)
 		: mMaxBlockSize(maxBlockSize) { }
 	virtual ~FileList();
-	
+
 	CompressedFile *find(const std::string& dest);
 	void add(const std::string& source);
-	
+
 	template <typename Op>
 	void forNames(Op op) {
 		Map::const_iterator iter;
