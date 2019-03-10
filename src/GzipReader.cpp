@@ -10,31 +10,33 @@
 #include "GzipFile.h"
 
 
-#define CHECK_ZLIB( x ) throwEx( "message", ( x ) )
-
-
-namespace GzipReaderInternal {
-
-void GzipReaderBase::throwEx( const std::string& s,
-                              int                err )
+void checkZlibStreamOperation( int         errorCode,
+                               const char* fileName,
+                               int         lineNumber,
+                               const char* functionName,
+                               const char* stringifiedArgument )
 {
-    if ( err == Z_OK ) {
+    if ( errorCode == Z_OK ) {
         return;
     }
 
     std::stringstream msg;
-    msg << s << ": " << ( mStream.msg != nullptr ? mStream.msg : "no zlib error message in stream object" )
-        << " (error code: " << err << ")";
+    msg << "\n[" << fileName << ":" << lineNumber << "]\n";
+    msg << "  Function: " << functionName << "\n";
+    msg << "  Expression evaluated for error code: " << stringifiedArgument << "\n";
+    msg << "  ZLib error code: " << errorCode << "\n";
 
-    throw Exception( msg.str() );
+    throw GzipReaderInternal::GzipReaderBase::Exception( msg.str() );
 }
+
+
+namespace GzipReaderInternal {
 
 void GzipReaderBase::setDict( const Buffer& dict )
 {
     initialize();
     if ( !dict.empty() ) {
-        throwEx( "setDict",
-                 inflateSetDictionary( &mStream, &dict[0], dict.size() ) );
+        CHECK_ZLIB( inflateSetDictionary( &mStream, &dict[0], dict.size() ) );
     }
 }
 
@@ -43,7 +45,7 @@ void GzipReaderBase::prime( uint8_t byte,
 {
     initialize();
     if ( bits != 0 ) {
-        throwEx( "prime", inflatePrime( &mStream, bits, byte >> ( 8 - bits ) ) );
+        CHECK_ZLIB( inflatePrime( &mStream, bits, byte >> ( 8 - bits ) ) );
     }
 }
 
@@ -56,7 +58,7 @@ int GzipReaderBase::step( int flush )
         mStream.next_in = &mInput[0];
     }
     if ( mStream.avail_out == 0 ) {
-        writeOut( outBuf().size() );
+        writeOut();
     }
 
     mOutBytes += mStream.avail_out;
@@ -69,7 +71,7 @@ int GzipReaderBase::stepThrow( int flush )
 {
     int err = step( flush );
     if ( err != Z_STREAM_END ) {
-        throwEx( "inflate", err );
+        CHECK_ZLIB( err );
     }
     return err;
 }
@@ -80,7 +82,7 @@ void GzipReaderBase::initialize()
         return;
     }
 
-    throwEx( "init", inflateInit2( &mStream, wrapper() ) );
+    CHECK_ZLIB( inflateInit2( &mStream, wrapper() ) );
     resetOutBuf();
 
     mInitialized = true;
@@ -120,18 +122,8 @@ int GzipReaderBase::block()
             break;
         }
     } while ( err != Z_STREAM_END );
+
     return err;
-}
-
-void GzipReaderBase::reset( Wrapper w )
-{
-    std::cerr << "stream: " << (void*)&mStream << "\n";
-    throwEx( "inflateReset", inflateReset2( &mStream, w ) );
-}
-
-void DiscardingGzipReader::moreData( Buffer& buf )
-{
-    mFH.tryRead( buf, chunkSize() );
 }
 
 void PositionedGzipReader::skipFooter()
@@ -169,26 +161,10 @@ GzipBlockReader::GzipBlockReader( const FileHandle& fh,
     }
 }
 
-void GzipBlockReader::read()
-{
-    while ( mStream.avail_out ) {
-        stepThrow( Z_NO_FLUSH );
-    }
-}
-
-void GzipBlockReader::moreData( Buffer& buf )
-{
-    mCFH.tryPRead( mPos, buf, chunkSize() );
-    mPos += buf.size();
-}
-
-size_t SavingGzipReader::windowSize() const
-{
-    return GzipFile::WindowSize;
-}
-
 void SavingGzipReader::save()
 {
+    DEBUG( "%s start", __func__ );
+
     if ( !mSave ) {
         mSave = new PositionedGzipReader( mFH );
     }
@@ -211,6 +187,8 @@ void SavingGzipReader::save()
 
     mInitOutPos = mSave->opos();
     mOutBytes = 0;
+
+    DEBUG( "%s end", __func__ );
 }
 
 void SavingGzipReader::restore()
@@ -228,4 +206,10 @@ void SavingGzipReader::copyWindow( Buffer& buf )
     buf.resize( outBuf().size() );
     std::rotate_copy( outBuf().begin(), outBuf().end() - mStream.avail_out,
                       outBuf().end(), buf.begin() );
+}
+
+size_t
+SavingGzipReader::windowSize() const
+{
+    return GzipFile::WindowSize;
 }

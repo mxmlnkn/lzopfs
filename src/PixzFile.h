@@ -42,19 +42,16 @@ protected:
             }
         }
 
-        virtual void incr();
+        void incr() override;
 
-        virtual const Block& deref() const { return mBlock; }
+        const Block& deref() const override { return mBlock; }
 
-        virtual bool end() const { return mEnd; }
+        bool end() const override { return mEnd; }
 
-        virtual BlockIteratorInner * dup() const;
-
+        BlockIteratorInner * dup() const override;
     };
 
-
     static const uint64_t MemLimit;
-
 
     lzma_index *mIndex;
 
@@ -76,14 +73,14 @@ public:
 
     virtual ~PixzFile();
 
-    virtual std::string destName() const;
+    std::string destName() const override;
 
-    virtual BlockIterator findBlock( off_t off ) const;
+    BlockIterator findBlock( off_t off ) const override;
 
-    virtual void decompressBlock( const FileHandle& fh,
-                                  const Block&      b,
-                                  Buffer&           ubuf ) const;
+    void decompressBlock( const FileHandle& fh,
+                          const Block&      b,
+                          Buffer&           ubuf ) const override;
 
-    virtual off_t uncompressedSize() const;
+    off_t uncompressedSize() const override;
 
 };

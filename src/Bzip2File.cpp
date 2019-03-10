@@ -1,10 +1,12 @@
 #include "Bzip2File.h"
 
-#include "PathUtils.h"
-
 #include <algorithm>
 
 #include <bzlib.h>
+
+#include "Debug.h"
+#include "PathUtils.h"
+
 
 const char Bzip2File::Magic[3] = { 'B', 'Z', 'h' };
 
@@ -94,8 +96,9 @@ const
 
             const off_t pos = rpos - ( buf + bsz - i );
             if ( ( v == BlockMagic ) ||( v == EOSMagic ) ) {
-                DEBUG( "%s %c %9lld %hhu",
-                       ( v == BlockMagic ? "block" : "eos  " ), level, pos, b );
+                DOUT << ( v == BlockMagic ? "block" : "eos  " ) << " "
+                     << (int)level << " " << pos << " " << b << "\n";
+
                 bl.push_back( BlockBoundary( v, level, pos, b ) );
                 if ( v == EOSMagic ) {
                     lcount = ftsz + lcreset;
@@ -230,18 +233,17 @@ void Bzip2File::buildIndex( FileHandle& fh )
             if ( level == 0 ) {
                 level = i->level;
             }
-            // DEBUG("level = %c", level);
             createAlignedBlock( fh, in, level, i->coff, i->bits, j->coff,
                                 j->bits );
             try {
                 decompress( in, out );
             } catch ( std::runtime_error& e ) {           // Boundary spurious, remove it
-                DEBUG( "failed! %9lld -- %9lld", i->coff, j->coff );
+                DOUT << "failed! " << i->coff << " -- " << j->coff << "\n";
                 // FileHandle::writeBuf(in, "block.bz2"); exit(-1);
                 bl.erase( j++ );
                 continue;
             }
-            DEBUG( "ok! %9lld -- %9lld", i->coff, j->coff );
+            DOUT << "ok! " << i->coff << " -- " << j->coff << "\n";
             addBlock( new Bzip2Block( *i, *j, uoff, out.size(), level ) );
             uoff += out.size();
             if ( j->magic == EOSMagic ) {

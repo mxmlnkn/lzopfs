@@ -45,8 +45,8 @@ lzma_index *PixzFile::readIndex( FileHandle& fh )
 
     lzma_index *idx = 0;
     Buffer buf;
-    lzma_stream s;
-    streamInit( s );
+    lzma_stream lzmaStream;
+    streamInit( lzmaStream );
 
     fh.seek( 0, SEEK_END );
     while ( true ) {
@@ -57,7 +57,7 @@ lzma_index *PixzFile::readIndex( FileHandle& fh )
             if ( p < LZMA_STREAM_HEADER_SIZE ) {
                 throwFormat( "padding not allowed at start" );
             }
-            size_t s = std::min( p, off_t( ChunkSize ) );
+            const size_t s = std::min( p, off_t( ChunkSize ) );
             fh.seek( p - s, SEEK_SET );
             fh.read( buf, s );
 
@@ -85,10 +85,10 @@ footer:
         // Read the index
         fh.seek( -LZMA_STREAM_HEADER_SIZE - flags.backward_size, SEEK_CUR );
         lzma_index *nidx;
-        if ( lzma_index_decoder( &s, &nidx, MemLimit ) != LZMA_OK ) {
+        if ( lzma_index_decoder( &lzmaStream, &nidx, MemLimit ) != LZMA_OK ) {
             throwFormat( "error initializing index decoder" );
         }
-        if ( code( s, fh ) != LZMA_OK ) {
+        if ( code( lzmaStream, fh ) != LZMA_OK ) {
             throwFormat( "error decoding index" );
         }
         npos -= lzma_index_file_size( nidx );

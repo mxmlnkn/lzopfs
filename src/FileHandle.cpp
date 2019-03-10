@@ -194,9 +194,12 @@ void FileHandle::convertBEBuf( char * buf,
 void FileHandle::convertLEBuf( char * buf,
                                size_t size )
 {
-        #ifndef __LITTLE_ENDIAN__
+#ifndef __LITTLE_ENDIAN__
     std::reverse( buf, buf + size );
-        #endif
+#else
+    (void)buf;
+    (void)size;
+#endif
 }
 
 void FileHandle::writeBuf( const Buffer&      b,

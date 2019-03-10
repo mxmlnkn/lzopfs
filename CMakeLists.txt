@@ -7,9 +7,15 @@ set( CMAKE_CXX_STANDARD 11 )
 
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake" )
 
+if( MSVC )
+  add_compile_options( /W4 /WX )
+else()
+  add_compile_options( -Wall -Wextra -Wshadow -Wsuggest-override )
+endif()
+
 include( TestBigEndian )
 TEST_BIG_ENDIAN( IS_BIG_ENDIAN )
-if ( IS_BIG_ENDIAN )
+if( IS_BIG_ENDIAN )
     add_definitions( -DUSE_BIG_ENDIAN=1 )
 else()
     add_definitions( -DUSE_BIG_ENDIAN=0 )

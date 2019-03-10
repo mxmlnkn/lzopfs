@@ -45,7 +45,7 @@ FSData * fsdata()
     return reinterpret_cast<FSData*>( fuse_get_context()->private_data );
 }
 
-extern "C" void * lf_init( struct fuse_conn_info *conn )
+extern "C" void * lf_init( struct fuse_conn_info * )
 {
     void *priv = fuse_get_context()->private_data;
     return new FSData( reinterpret_cast<FileList*>( priv ) );
@@ -89,8 +89,8 @@ struct DirFiller
 extern "C" int lf_readdir( const char *           path,
                            void *                 buf,
                            fuse_fill_dir_t        filler,
-                           off_t                  offset,
-                           struct fuse_file_info *fi )
+                           off_t                  ,
+                           struct fuse_file_info * )
 {
     if ( strcmp( path, "/" ) != 0 ) {
         return -ENOENT;
@@ -121,7 +121,7 @@ extern "C" int lf_open( const char *           path,
     }
 }
 
-extern "C" int lf_release( const char *           path,
+extern "C" int lf_release( const char *           ,
                            struct fuse_file_info *fi )
 {
     delete reinterpret_cast<OpenCompressedFile*>( fi->fh );
@@ -129,7 +129,7 @@ extern "C" int lf_release( const char *           path,
     return 0;
 }
 
-extern "C" int lf_read( const char *           path,
+extern "C" int lf_read( const char *           ,
                         char *                 buf,
                         size_t                 size,
                         off_t                  offset,
@@ -163,7 +163,7 @@ static struct fuse_opt lf_opts[] = {
 extern "C" int lf_opt_proc( void *            data,
                             const char *      arg,
                             int               key,
-                            struct fuse_args *outargs )
+                            struct fuse_args * )
 {
     OptData *optd = reinterpret_cast<OptData*>( data );
     if ( key == FUSE_OPT_KEY_NONOPT ) {
@@ -238,10 +238,10 @@ int main( int   argc,
 
         paths_t files;
         OptData optd = { 0, &files, 0 };
-        struct fuse_args args = FUSE_ARGS_INIT( argc, argv );
-        fuse_opt_parse( &args, &optd, lf_opts, lf_opt_proc );
+        struct fuse_args fuseArgs = FUSE_ARGS_INIT( argc, argv );
+        fuse_opt_parse( &fuseArgs, &optd, lf_opts, lf_opt_proc );
         if ( optd.nextSource ) {
-            fuse_opt_add_arg( &args, optd.nextSource );
+            fuse_opt_add_arg( &fuseArgs, optd.nextSource );
         }
 
         if ( optd.gzipBlockFactor ) {
@@ -263,7 +263,7 @@ int main( int   argc,
         }
 
         std::cerr << "Ready\n";
-        return fuse_main( args.argc, args.argv, &ops, flist );
+        return fuse_main( fuseArgs.argc, fuseArgs.argv, &ops, flist );
     } catch ( std::runtime_error& e ) {
         fprintf( stderr, "%s: %s\n", typeid( e ).name(), e.what() );
         exit( 1 );

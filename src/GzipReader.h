@@ -1,9 +1,12 @@
 #pragma once
 
+#include <stdexcept>
+
 #include <zlib.h>
 
 #include "Block.h"
 #include "Buffer.h"
+#include "Debug.h"
 #include "FileHandle.h"
 
 
@@ -20,6 +23,15 @@
  *         SavingGzipReader
  * @endverbatim
  */
+
+
+void checkZlibStreamOperation( int         errorCode,
+                               const char* fileName,
+                               int         lineNumber,
+                               const char* functionName,
+                               const char* stringifiedArgument );
+
+#define CHECK_ZLIB( x ) ::checkZlibStreamOperation( x, __FILENAME__, __LINE__, AVAILABLE_FUNCTION, #x )
 
 
 class GzipHeaderReader;
@@ -86,7 +98,7 @@ protected:
 
     virtual Buffer& outBuf() = 0;
 
-    virtual void writeOut( size_t n )
+    virtual void writeOut()
     {
         throw std::runtime_error( "out of space in gzip output buffer" );
     }
@@ -94,24 +106,40 @@ protected:
 public:
     GzipReaderBase();
 
-    inline virtual ~GzipReaderBase()
+    inline virtual
+    ~GzipReaderBase()
     {
         if ( mInitialized ) {
             inflateEnd( &mStream );
         }
     }
 
-    void swap( GzipReaderBase& o );
+    void
+    swap( GzipReaderBase& o );
 
-    int block();     // Read to next block
+    int
+    block();     // Read to next block
 
-    void reset( Wrapper w );
+    inline virtual void
+    reset( Wrapper w )
+    {
+        CHECK_ZLIB( inflateReset2( &mStream, w ) );
+    };
 
-    virtual off_t ipos() const = 0;
+    virtual off_t
+    ipos() const = 0;
 
-    size_t ibits() const { return mStream.data_type & 7; }
+    size_t
+    ibits() const
+    {
+        return mStream.data_type & 7;
+    }
 
-    off_t obytes() const { return mOutBytes; }
+    off_t
+    obytes() const
+    {
+        return mOutBytes;
+    }
 
 public:
     z_stream mStream;     /**< libz struct holding the opened gzip stream */
@@ -128,33 +156,54 @@ protected:
     Buffer mOutBuf;
 
 public:
+    inline
     DiscardingGzipReader( FileHandle& fh ) :
-        mFH( fh ) { }
+        mFH( fh )
+    {}
 
-    void swap( DiscardingGzipReader& o )
+    inline void
+    swap( DiscardingGzipReader& o )
     {
         GzipReaderBase::swap( o );
         std::swap( mOutBuf, o.mOutBuf );
     }
 
-    void moreData( Buffer& buf ) override;
+    inline void
+    moreData( Buffer& buf ) override
+    {
+        mFH.tryRead( buf, chunkSize() );
+    }
 
-    void writeOut( size_t n ) override { resetOutBuf(); }
-    Buffer& outBuf() override { return mOutBuf; }
+    inline void
+    writeOut() override
+    {
+        resetOutBuf();
+    }
 
-    off_t ipos() const override { return mFH.tell() - mStream.avail_in; }
+    inline Buffer&
+    outBuf() override
+    {
+        return mOutBuf;
+    }
+
+    inline off_t
+    ipos() const override
+    {
+        return mFH.tell() - mStream.avail_in;
+    }
 };
 
 
 class PositionedGzipReader : public DiscardingGzipReader
 {
+    friend class ::SavingGzipReader;
+
 protected:
     off_t mInitOutPos;
     Wrapper mWrap;
 
+protected:
     Wrapper wrapper() const override { return mWrap; }
-
-    friend class ::SavingGzipReader;
 
 public:
     inline PositionedGzipReader( FileHandle& fh,
@@ -164,14 +213,16 @@ public:
         mWrap( opos ? Raw : Gzip )
     {}
 
-    inline void swap( PositionedGzipReader& o )
+    inline void
+    swap( PositionedGzipReader& o )
     {
         DiscardingGzipReader::swap( o );
         std::swap( mInitOutPos, o.mInitOutPos );
         std::swap( mWrap, o.mWrap );
     }
 
-    inline void reset( Wrapper w ) override
+    inline void
+    reset( Wrapper w ) override
     {
         mWrap = w;
         DiscardingGzipReader::reset( w );
@@ -200,7 +251,7 @@ public:
     inline void header( gz_header& hdr )
     {
         initialize();
-        throwEx( "header", inflateGetHeader( &mStream, &hdr ) );
+        CHECK_ZLIB( inflateGetHeader( &mStream, &hdr ) );
         while ( !hdr.done ) {
             stepThrow();
         }
@@ -223,12 +274,21 @@ public:
                      const Buffer&     dict,
                      size_t            bits );
 
-    void moreData( Buffer& buf ) override;
+    void moreData( Buffer& buf ) override
+    {
+        mCFH.tryPRead( mPos, buf, chunkSize() );
+        mPos += buf.size();
+    }
 
-    Buffer& outBuf() { return mOutBuf; }
+    inline void
+    read()
+    {
+        while ( mStream.avail_out ) {
+            stepThrow( Z_NO_FLUSH );
+        }
+    }
 
-    void read();
-
+    Buffer& outBuf() override { return mOutBuf; }
     off_t ipos() const override { return mPos; }
 };
 
@@ -236,7 +296,7 @@ public:
 class SavingGzipReader : public GzipReaderInternal::PositionedGzipReader
 {
 protected:
-    PositionedGzipReader *mSave = nullptr;
+    PositionedGzipReader* mSave = nullptr;
     off_t mSaveSeek;
 
 public:
@@ -262,6 +322,6 @@ public:
     void copyWindow( Buffer& buf );
 
 protected:
-    size_t windowSize() const;
-
+    size_t
+    windowSize() const;
 };

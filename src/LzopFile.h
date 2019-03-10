@@ -42,9 +42,9 @@ protected:
     Checksum checksum( ChecksumType  type,
                        const Buffer& buf );
 
-    virtual void checkFileType( FileHandle &fh ) { readHeaders( fh, mFlags ); }
+    void checkFileType( FileHandle &fh ) override { readHeaders( fh, mFlags ); }
 
-    virtual void buildIndex( FileHandle& fh );
+    void buildIndex( FileHandle& fh ) override;
 
 public:
     static CompressedFile* open( const std::string& path,
@@ -54,10 +54,10 @@ public:
     LzopFile( const std::string& path,
               uint64_t           maxBlock );
 
-    virtual std::string destName() const;
+    std::string destName() const override;
 
-    virtual void decompressBlock( const FileHandle& fh,
-                                  const Block&      b,
-                                  Buffer&           ubuf ) const;
+    void decompressBlock( const FileHandle& fh,
+                          const Block&      b,
+                          Buffer&           ubuf ) const override;
 
 };

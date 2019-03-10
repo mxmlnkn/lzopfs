@@ -124,12 +124,12 @@ protected:
             mIter( i ),
             mEnd( e ) { }
 
-        virtual void incr() { ++mIter; }
-        virtual const Block& deref() const { return **mIter; }
+        void incr() override { ++mIter; }
+        const Block& deref() const override { return **mIter; }
 
-        virtual bool end() const { return mIter == mEnd; }
+        bool end() const override { return mIter == mEnd; }
 
-        virtual BlockIteratorInner * dup() const
+        BlockIteratorInner * dup() const override
         { return new Iterator( mIter, mEnd ); }
     };
 
@@ -156,8 +156,8 @@ protected:
 
     void addBlock( Block* b ) { mBlocks.push_back( b ); }
 
-    virtual BlockIterator findBlock( off_t off ) const;
+    BlockIterator findBlock( off_t off ) const override;
 
-    virtual off_t uncompressedSize() const;
+    off_t uncompressedSize() const override;
 
 };

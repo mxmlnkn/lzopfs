@@ -49,7 +49,7 @@ Buffer& GzipFile::addBlock( off_t  uoff,
 
 void GzipFile::buildIndex( FileHandle& fh )
 {
-    DEBUG( "Building Index ..." );
+    DOUT << "Building Index ...";
 
     fh.seek( 0, SEEK_SET );
     SavingGzipReader rd( fh );
@@ -73,7 +73,7 @@ void GzipFile::buildIndex( FileHandle& fh )
             if ( indep ) {
                 if ( ( rd.obytes() > off_t( WindowSize ) ) || ( err == Z_STREAM_END ) ) {
                     // Yay, uoff block is indep!
-                    DEBUG( "...ok, adding!" );
+                    DOUT << "...ok, adding!\n";
                     addBlock( uoff, coff, bits );
                     lastIdx = uoff;
                     indep = false;
@@ -83,12 +83,12 @@ void GzipFile::buildIndex( FileHandle& fh )
                     }
                     // If !backtrack, continue from where we're at
                 } else if ( rd.obytes() == 0 ) {               // Zero-length block, ignore
-                    DEBUG( "zero, rewinding!" );
+                    DOUT << "zero, rewinding!\n";
                     indep = false;
                     rd.restore();
                     continue;
                 } else {
-                    DEBUG( "(backtrack)" );
+                    DOUT << "(backtrack)\n";
                     // Mark that there's a block between uoff and window end
                     backtrack = true;
                 }
@@ -107,9 +107,9 @@ void GzipFile::buildIndex( FileHandle& fh )
                 uoff = rd.opos();
                 coff = rd.ipos();
                 bits = rd.ibits();
-                DEBUG( "Checking %lld, %lld", uoff, coff );
+                DOUT << "Checking " << uoff << ", " << coff << "\n";
                 rd.save();
-                DEBUG( "saved" );
+                DOUT << "saved\n";
                 backtrack = false;
                 indep = true;
             }
@@ -119,12 +119,12 @@ void GzipFile::buildIndex( FileHandle& fh )
             }
 
             if ( indep ) {           // Indep decode failed, so rewind
-                DEBUG( "...failed, rewinding!" );
+                DOUT << "...failed, rewinding!\n";
                 indep = false;
                 rd.restore();
                 if ( rd.opos() - lastIdx > off_t( minBlock ) ) {
                     // Add a dict block
-                    DEBUG( "Dict block" );
+                    DOUT << "Dict block\n";
                     Buffer& dict = addBlock( rd.opos(), rd.ipos(), rd.ibits() );
                     rd.copyWindow( dict );
                     lastIdx = rd.opos();
@@ -133,7 +133,7 @@ void GzipFile::buildIndex( FileHandle& fh )
         }
     }
     setLastBlockSize( rd.opos(), rd.ipos() );
-// dumpBlocks();
+    // dumpBlocks();
 }
 
 GzipFile::GzipFile( const std::string& path,

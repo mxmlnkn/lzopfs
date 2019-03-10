@@ -3,7 +3,6 @@
 #include "Block.h"
 #include "Buffer.h"
 #include "CompressedFile.h"
-#include "Debug.h"
 #include "GzipReader.h"
 
 
@@ -15,11 +14,12 @@ protected:
         size_t bits;
         Buffer dict;
 
-        GzipBlock( off_t  uoff,
-                   off_t  coff,
-                   size_t b ) :
-            Block( 0, 0, uoff, coff ),
-            bits( b ) { }
+        GzipBlock( off_t  rUoff,
+                   off_t  rCoff,
+                   size_t rBits ) :
+            Block( 0, 0, rUoff, rCoff ),
+            bits( rBits )
+            {}
     };
 
     void setLastBlockSize( off_t uoff,
@@ -29,17 +29,17 @@ protected:
                       off_t  coff,
                       size_t bits );
 
-    virtual void checkFileType( FileHandle &fh );
+    void checkFileType( FileHandle &fh ) override;
 
-    virtual void buildIndex( FileHandle& fh );
+    void buildIndex( FileHandle& fh ) override;
 
-    virtual Block* newBlock() const { return new GzipBlock( 0, 0, 0 ); }
+    Block* newBlock() const override { return new GzipBlock( 0, 0, 0 ); }
 
-    virtual bool readBlock( FileHandle& fh,
-                            Block*      b );                    // True unless EOF
+    bool readBlock( FileHandle& fh,
+                    Block*      b ) override; // True unless EOF
 
-    virtual void writeBlock( FileHandle&  fh,
-                             const Block *b ) const;
+    void writeBlock( FileHandle&  fh,
+                             const Block *b ) const override;
 
 public:
     static const size_t WindowSize;
@@ -59,10 +59,10 @@ public:
     GzipFile( const std::string& path,
               uint64_t           maxBlock );
 
-    virtual std::string destName() const;
+    std::string destName() const override;
 
-    virtual void decompressBlock( const FileHandle& fh,
-                                  const Block&      b,
-                                  Buffer&           ubuf ) const;
+    void decompressBlock( const FileHandle& fh,
+                          const Block&      b,
+                          Buffer&           ubuf ) const override;
 
 };

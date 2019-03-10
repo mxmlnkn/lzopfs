@@ -90,7 +90,7 @@ protected:
              NeededBlock& b ) :
             info( i ),
             block( b ) { }
-        virtual void operator()();
+        void operator()() override;
 
     };
     friend struct Job;

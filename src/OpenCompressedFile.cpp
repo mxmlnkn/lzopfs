@@ -16,6 +16,7 @@ void OpenCompressedFile::decompressBlock( const Block& b,
 }
 
 namespace {
+
 struct Callback : public BlockCache::Callback
 {
     off_t& max;
@@ -32,8 +33,8 @@ struct Callback : public BlockCache::Callback
         size( s ),
         offset( o ) { }
 
-    virtual void operator()( const Block&        block,
-                             BlockCache::BufPtr& ubuf )
+    void operator()( const Block&        block,
+                     BlockCache::BufPtr& ubuf ) override
     {
         off_t omin = std::max( offset, off_t( block.uoff ) ),
               omax = std::min( offset + size, block.uoff + block.usize );
@@ -44,6 +45,7 @@ struct Callback : public BlockCache::Callback
     }
 
 };
+
 }
 
 ssize_t OpenCompressedFile::read( BlockCache& cache,

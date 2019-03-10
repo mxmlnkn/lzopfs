@@ -10,9 +10,9 @@
 class Bzip2File : public IndexedCompFile
 {
 protected:
-    virtual void checkFileType( FileHandle &fh );
+    void checkFileType( FileHandle &fh ) override;
 
-    virtual void buildIndex( FileHandle& fh );
+    void buildIndex( FileHandle& fh ) override;
 
     struct BlockBoundary
     {
@@ -39,15 +39,15 @@ protected:
 
         Bzip2Block() { }
 
-        Bzip2Block( BlockBoundary& start,
-                    BlockBoundary& end,
-                    off_t          uoff,
-                    size_t         usize,
-                    char           lev ) :
-            Block( usize, end.coff - start.coff, uoff, start.coff ),
-            bits( start.bits ),
-            endbits( end.bits ),
-            level( lev ) { }
+        Bzip2Block( BlockBoundary& rStart,
+                    BlockBoundary& rEnd,
+                    off_t          rUoff,
+                    size_t         rUsize,
+                    char           rLev ) :
+            Block( rUsize, rEnd.coff - rStart.coff, rUoff, rStart.coff ),
+            bits( rStart.bits ),
+            endbits( rEnd.bits ),
+            level( rLev ) { }
     };
 
     void findBlockBoundaryCandidates( FileHandle& fh,
@@ -64,13 +64,13 @@ protected:
     void decompress( const Buffer& in,
                      Buffer& out ) const;
 
-    virtual Block* newBlock() const { return new Bzip2Block(); }
+    Block* newBlock() const override { return new Bzip2Block(); }
 
-    virtual bool readBlock( FileHandle& fh,
-                            Block*      b );
+    bool readBlock( FileHandle& fh,
+                    Block*      b ) override;
 
-    virtual void writeBlock( FileHandle&  fh,
-                             const Block *b ) const;
+    void writeBlock( FileHandle&  fh,
+                     const Block *b ) const override;
 
 public:
     static const char Magic[];
@@ -87,10 +87,10 @@ public:
                uint64_t           maxBlock ) :
         IndexedCompFile( path ) { initialize( maxBlock ); }
 
-    virtual std::string destName() const;
+    std::string destName() const override;
 
-    virtual void decompressBlock( const FileHandle& fh,
-                                  const Block&      b,
-                                  Buffer&           ubuf ) const;
+    void decompressBlock( const FileHandle& fh,
+                          const Block&      b,
+                          Buffer&           ubuf ) const override;
 
 };
