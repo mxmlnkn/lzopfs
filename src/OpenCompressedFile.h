@@ -5,19 +5,26 @@
 
 class BlockCache;
 
-class OpenCompressedFile {
+class OpenCompressedFile
+{
 protected:
-	const CompressedFile *mFile;
-	FileHandle mFH;
+    const CompressedFile *mFile;
+    FileHandle mFH;
 
 public:
-	typedef std::string FileID;
+    typedef std::string FileID;
 
-	OpenCompressedFile(const CompressedFile *file, int openFlags);
+    OpenCompressedFile( const CompressedFile *file,
+                        int                   openFlags );
 
-	void decompressBlock(const Block& b, Buffer& ubuf) const;
-	ssize_t read(BlockCache& cache, char *buf, size_t size, off_t offset)
-		const;
+    void decompressBlock( const Block& b,
+                          Buffer&      ubuf ) const;
 
-	FileID id() const { return mFile->path(); }
+    ssize_t read( BlockCache& cache,
+                  char *      buf,
+                  size_t      size,
+                  off_t       offset )
+    const;
+
+    FileID id() const { return mFile->path(); }
 };

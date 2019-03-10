@@ -10,72 +10,100 @@
 #include "ThreadPool.h"
 
 
-class BlockCache {
+class BlockCache
+{
 public:
-	typedef std::shared_ptr<Buffer> BufPtr;
+    typedef std::shared_ptr<Buffer> BufPtr;
 
-	struct Callback {
-		virtual void operator()(const Block& block, BufPtr& buf) = 0;
-	};
+    struct Callback
+    {
+        virtual void operator()( const Block& block,
+                                 BufPtr&      buf ) = 0;
 
-	typedef CompressedFile::BlockIterator BlockIterator;
+    };
+
+    typedef CompressedFile::BlockIterator BlockIterator;
 
 protected:
-	struct Key {
-		OpenCompressedFile::FileID id;
-		off_t offset;
-		Key(OpenCompressedFile::FileID i, off_t o) : id(i), offset(o) { }
-		bool operator==(const Key& o) const {
-			return o.offset == offset && o.id == id;
-		}
-	};
-	struct KeyHasher : public std::unary_function<Key, std::size_t> {
-		size_t operator()(const Key& k) const {
-			return std::hash<std::string>()(k.id) * 37 + k.offset;
-		}
-	};
+    struct Key
+    {
+        OpenCompressedFile::FileID id;
+        off_t offset;
+
+        Key( OpenCompressedFile::FileID i,
+             off_t                      o ) : id( i ), offset( o ) { }
+        bool operator==( const Key& o ) const
+        {
+            return o.offset == offset && o.id == id;
+        }
+
+    };
+    struct KeyHasher : public std::unary_function<Key, std::size_t>
+    {
+        size_t operator()( const Key& k ) const
+        {
+            return std::hash<std::string>() ( k.id ) * 37 + k.offset;
+        }
+
+    };
 
 
-	struct NeededBlock {
-		BlockIterator biter;
-		Key key;
-		NeededBlock(const BlockIterator& bi, const Key& k)
-			: biter(bi), key(k) { }
-	};
+    struct NeededBlock
+    {
+        BlockIterator biter;
+        Key key;
 
-	struct JobInfo {
-		BlockCache& cache;
-		const OpenCompressedFile& file;
-		Callback& cb;
-		ConditionVariable& cv;
-		size_t& remain;
-		JobInfo(BlockCache& c, const OpenCompressedFile& f, Callback& pcb,
-			ConditionVariable& pcv, size_t& r)
-			: cache(c), file(f), cb(pcb), cv(pcv), remain(r) { }
-	};
+        NeededBlock( const BlockIterator& bi,
+                     const Key&           k )
+            : biter( bi ), key( k ) { }
+    };
 
-	struct Job : public ThreadPool::Job {
-		JobInfo& info;
-		NeededBlock& block;
+    struct JobInfo
+    {
+        BlockCache& cache;
+        const OpenCompressedFile& file;
+        Callback& cb;
+        ConditionVariable& cv;
+        size_t& remain;
 
-		Job(JobInfo& i, NeededBlock& b) : info(i), block(b) { }
-		virtual void operator()();
-	};
-	friend struct Job;
+        JobInfo( BlockCache&               c,
+                 const OpenCompressedFile& f,
+                 Callback&                 pcb,
+                 ConditionVariable&        pcv,
+                 size_t&                   r )
+            : cache( c ), file( f ), cb( pcb ), cv( pcv ), remain( r ) { }
+    };
+
+    struct Job : public ThreadPool::Job
+    {
+        JobInfo& info;
+        NeededBlock& block;
+
+        Job( JobInfo&     i,
+             NeededBlock& b ) : info( i ), block( b ) { }
+        virtual void operator()();
+
+    };
+    friend struct Job;
 
 
-	typedef LRUMap<Key, BufPtr, KeyHasher> Map;
-	Map mMap;
-	ThreadPool& mPool;
-	Mutex mMutex;
+    typedef LRUMap<Key, BufPtr, KeyHasher> Map;
+    Map mMap;
+    ThreadPool& mPool;
+    Mutex mMutex;
 
 public:
-	BlockCache(ThreadPool& pool, size_t maxSize = 0)
-		: mMap(maxSize), mPool(pool) { }
-	void maxSize(size_t s) { mMap.maxWeight(s); }
+    BlockCache( ThreadPool& pool,
+                size_t      maxSize = 0 )
+        : mMap( maxSize ), mPool( pool ) { }
 
-	void dump();
+    void maxSize( size_t s ) { mMap.maxWeight( s ); }
 
-	void getBlocks(const OpenCompressedFile& file, BlockIterator& it,
-		off_t max, Callback& cb);
+    void dump();
+
+    void getBlocks( const OpenCompressedFile& file,
+                    BlockIterator&            it,
+                    off_t                     max,
+                    Callback&                 cb );
+
 };
