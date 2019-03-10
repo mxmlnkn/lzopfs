@@ -22,6 +22,10 @@
  */
 
 
+class GzipHeaderReader;
+class SavingGzipReader;
+
+
 namespace GzipReaderInternal {
 
 /**
@@ -33,7 +37,6 @@ class GzipReaderBase
 public:
     struct Exception : std::runtime_error
     {
-
         Exception( const std::string& s ) : std::runtime_error( s ) { }
     };
 
@@ -47,7 +50,6 @@ public:
 private:
     // Disable copying
     GzipReaderBase( const GzipReaderBase& o ) = delete;
-
     GzipReaderBase& operator=( const GzipReaderBase& o ) = delete;
 
 protected:
@@ -61,6 +63,7 @@ protected:
         mStream.avail_out = outBuf().size();
     }
 
+    /** only used by GzipBlockReader */
     void setDict( const Buffer& dict );
 
     void prime( uint8_t byte,
@@ -70,17 +73,20 @@ protected:
 
     int stepThrow( int flush = Z_BLOCK );
 
-    virtual void initialize( bool force = false );
+    void initialize();
 
     virtual void moreData( Buffer& buf ) = 0;
 
     virtual size_t chunkSize() const;
 
     virtual Wrapper wrapper() const { return Raw; }
+
     virtual Buffer& outBuf() = 0;
 
     virtual void writeOut( size_t n )
-    { throw std::runtime_error( "out of space in gzip output buffer" ); }
+    {
+        throw std::runtime_error( "out of space in gzip output buffer" );
+    }
 
 public:
     GzipReaderBase();
@@ -107,8 +113,6 @@ public:
 public:
     z_stream mStream;     /**< libz struct holding the opened gzip stream */
     Buffer mInput;
-
-protected:
     bool mInitialized = false;
     off_t mOutBytes = 0;
 };
@@ -129,12 +133,12 @@ public:
         std::swap( mOutBuf, o.mOutBuf );
     }
 
-    virtual void moreData( Buffer& buf );
+    void moreData( Buffer& buf ) override;
 
-    virtual void writeOut( size_t n ) { resetOutBuf(); }
-    virtual Buffer& outBuf() { return mOutBuf; }
+    void writeOut( size_t n ) override { resetOutBuf(); }
+    Buffer& outBuf() override { return mOutBuf; }
 
-    virtual off_t ipos() const { return mFH.tell() - mStream.avail_in; }
+    off_t ipos() const override { return mFH.tell() - mStream.avail_in; }
 };
 
 
@@ -144,25 +148,30 @@ protected:
     off_t mInitOutPos;
     Wrapper mWrap;
 
-    virtual Wrapper wrapper() const { return mWrap; }
+    Wrapper wrapper() const override { return mWrap; }
 
-    friend class SavingGzipReader;
+    friend class ::SavingGzipReader;
 
 public:
-    PositionedGzipReader( FileHandle& fh,
-                          off_t       opos = 0 )
-        : DiscardingGzipReader( fh ), mInitOutPos( opos ),
-        mWrap( opos ? Raw : Gzip ) { }
+    inline PositionedGzipReader( FileHandle& fh,
+                                 off_t       opos = 0 )
+      : DiscardingGzipReader( fh ),
+        mInitOutPos( opos ),
+        mWrap( opos ? Raw : Gzip )
+    {}
 
-    void swap( PositionedGzipReader& o )
+    inline void swap( PositionedGzipReader& o )
     {
         DiscardingGzipReader::swap( o );
         std::swap( mInitOutPos, o.mInitOutPos );
         std::swap( mWrap, o.mWrap );
     }
 
-    virtual void reset( Wrapper w )
-    { mWrap = w; DiscardingGzipReader::reset( w ); }
+    inline void reset( Wrapper w ) override
+    {
+        mWrap = w;
+        DiscardingGzipReader::reset( w );
+    }
 
     off_t opos() const { return mInitOutPos + obytes(); }
 
@@ -179,9 +188,9 @@ class GzipHeaderReader : public GzipReaderInternal::DiscardingGzipReader
 public:
     GzipHeaderReader( FileHandle& fh ) : DiscardingGzipReader( fh ) { mOutBuf.resize( 1 ); }
 
-    inline virtual size_t chunkSize() const { return 512; }
+    inline size_t chunkSize() const override { return 512; }
 
-    inline virtual Wrapper wrapper() const { return Gzip; }
+    inline Wrapper wrapper() const override { return Gzip; }
 
     inline void header( gz_header& hdr )
     {
@@ -209,13 +218,13 @@ public:
                      const Buffer&     dict,
                      size_t            bits );
 
-    virtual void moreData( Buffer& buf );
+    void moreData( Buffer& buf ) override;
 
     Buffer& outBuf() { return mOutBuf; }
 
     void read();
 
-    virtual off_t ipos() const { return mPos; }
+    off_t ipos() const override { return mPos; }
 };
 
 

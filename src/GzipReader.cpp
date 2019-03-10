@@ -74,9 +74,9 @@ int GzipReaderBase::stepThrow( int flush )
     return err;
 }
 
-void GzipReaderBase::initialize( bool force )
+void GzipReaderBase::initialize()
 {
-    if ( !force && mInitialized ) {
+    if ( mInitialized ) {
         return;
     }
 
