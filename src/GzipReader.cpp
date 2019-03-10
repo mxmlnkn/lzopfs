@@ -2,14 +2,28 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "CompressedFile.h"
 #include "GzipFile.h"
 
+
+#define CHECK_ZLIB( x ) throwEx( "message", ( x ) )
+
+
+namespace GzipReaderInternal {
+
 void GzipReaderBase::throwEx(const std::string& s, int err) {
 	if (err == Z_OK)
 		return;
-	throw Exception(zerr(s, err));
+
+    std::stringstream msg;
+    msg << s << ": " << ( mStream.msg != nullptr ? mStream.msg : "no zlib error message in stream object" )
+        << " (error code: " << err << ")";
+
+	throw Exception( msg.str() );
 }
 
 void GzipReaderBase::setDict(const Buffer& dict) {
@@ -34,7 +48,7 @@ int GzipReaderBase::step(int flush) {
 	}
 	if (mStream.avail_out == 0)
 		writeOut(outBuf().size());
-	
+
 	mOutBytes += mStream.avail_out;
 	int err = inflate(&mStream, flush);
 	mOutBytes -= mStream.avail_out;
@@ -51,10 +65,10 @@ int GzipReaderBase::stepThrow(int flush) {
 void GzipReaderBase::initialize(bool force) {
 	if (!force && mInitialized)
 		return;
-	
+
 	throwEx("init", inflateInit2(&mStream, wrapper()));
 	resetOutBuf();
-	
+
 	mInitialized = true;
 }
 
@@ -62,7 +76,7 @@ size_t GzipReaderBase::chunkSize() const {
 	return CompressedFile::ChunkSize;
 }
 
-GzipReaderBase::GzipReaderBase() : mInitialized(false), mOutBytes(0) {
+GzipReaderBase::GzipReaderBase() {
 	mStream.zfree = Z_NULL;
 	mStream.zalloc = Z_NULL;
 	mStream.opaque = Z_NULL;
@@ -75,14 +89,6 @@ void GzipReaderBase::swap(GzipReaderBase& o) {
 	std::swap(mStream, o.mStream);
 	std::swap(mInput, o.mInput);
 	std::swap(mOutBytes, o.mOutBytes);
-}
-
-std::string GzipReaderBase::zerr(const std::string& s, int err) const {
-	char *w = NULL;	
-	asprintf(&w, "%s: %s (%d)", s.c_str(), mStream.msg, err);
-	std::string ws(w);
-	free(w);
-	return ws;
 }
 
 int GzipReaderBase::block() {
@@ -98,12 +104,29 @@ int GzipReaderBase::block() {
 }
 
 void GzipReaderBase::reset(Wrapper w) {
+    std::cerr << "stream: " << (void*)&mStream << "\n";
 	throwEx("inflateReset", inflateReset2(&mStream, w));
 }
 
 void DiscardingGzipReader::moreData(Buffer& buf) {
 	mFH.tryRead(buf, chunkSize());
 }
+
+void PositionedGzipReader::skipFooter() {
+	if (wrapper() == Gzip)
+		return; // footer should've been processed
+	const size_t footerSize = 8;
+	if (mStream.avail_in < footerSize) {
+		mFH.seek(footerSize - mStream.avail_in, SEEK_CUR);
+		mStream.avail_in = 0;
+	} else {
+		mStream.avail_in -= footerSize;
+		mStream.next_in += footerSize;
+	}
+}
+
+} // namespace GzipReaderInternal
+
 
 GzipBlockReader::GzipBlockReader(const FileHandle& fh, Buffer& ubuf,
 		const Block& b, const Buffer& dict, size_t bits)
@@ -128,19 +151,6 @@ void GzipBlockReader::moreData(Buffer& buf) {
 	mPos += buf.size();
 }
 
-void PositionedGzipReader::skipFooter() {
-	if (wrapper() == Gzip)
-		return; // footer should've been processed
-	const size_t footerSize = 8;
-	if (mStream.avail_in < footerSize) {
-		mFH.seek(footerSize - mStream.avail_in, SEEK_CUR);
-		mStream.avail_in = 0;
-	} else {
-		mStream.avail_in -= footerSize;
-		mStream.next_in += footerSize;
-	}
-}
-
 size_t SavingGzipReader::windowSize() const {
 	return GzipFile::WindowSize;
 }
@@ -149,22 +159,22 @@ void SavingGzipReader::save() {
 	if (!mSave)
 		mSave = new PositionedGzipReader(mFH);
 	swap(*mSave);
-	
+
 	mSaveSeek = mFH.tell();
-	
+
 	// Fixup state to correspond to where we were
 	reset(Raw);
-	
+
 	mInput = mSave->mInput;
 	mStream.avail_in = mSave->mStream.avail_in;
 	mStream.next_in = &mInput[0] + mInput.size() - mStream.avail_in;
-	
+
 	mOutBuf.resize(windowSize());
 	resetOutBuf();
-	
+
 	size_t bits = mSave->ibits();
 	prime(mStream.next_in[-1], bits);
-	
+
 	mInitOutPos = mSave->opos();
 	mOutBytes = 0;
 }
@@ -172,7 +182,7 @@ void SavingGzipReader::save() {
 void SavingGzipReader::restore() {
 	if (!mSave)
 		throw std::runtime_error("no saved state");
-	
+
 	swap(*mSave);
 	mFH.seek(mSaveSeek, SEEK_SET);
 }

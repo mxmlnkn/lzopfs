@@ -1,13 +1,14 @@
-#ifndef BLOCKCACHE_H
-#define BLOCKCACHE_H
+#pragma once
 
 #include <functional>
 #include <memory>
 
-#include "lzopfs.h"
-#include "OpenCompressedFile.h"
+#include "Block.h"
+#include "Buffer.h"
 #include "LRUMap.h"
+#include "OpenCompressedFile.h"
 #include "ThreadPool.h"
+
 
 class BlockCache {
 public:
@@ -78,5 +79,3 @@ public:
 	void getBlocks(const OpenCompressedFile& file, BlockIterator& it,
 		off_t max, Callback& cb);
 };
-
-#endif // BLOCKCACHE_H

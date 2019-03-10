@@ -1,33 +1,32 @@
 #include "FileList.h"
 
-#include <cstdio>
+#include <iostream>
 
 #include "LzopFile.h"
 #include "PixzFile.h"
 #include "GzipFile.h"
 #include "Bzip2File.h"
 
+
 const FileList::OpenerList FileList::Openers(initOpeners());
 
 FileList::OpenerList FileList::initOpeners() {
-	OpenFunc o[] = { LzopFile::open, GzipFile::open, Bzip2File::open,
-		PixzFile::open };
-	return OpenerList(o, o + sizeof(o)/sizeof(o[0]));
+	return { LzopFile::open, GzipFile::open, Bzip2File::open, PixzFile::open };
 }
 
 
 CompressedFile *FileList::find(const std::string& dest) {
-	Map::iterator found = mMap.find(dest);
+	const auto found = mMap.find(dest);
 	if (found == mMap.end())
-		return 0;
+		return nullptr;
 	return found->second;
 }
 
 void FileList::add(const std::string& source) {
-	CompressedFile *file = 0;
+	CompressedFile *file = nullptr;
 	try {
-		OpenerList::const_iterator iter;
-		for (iter = Openers.begin(); iter != Openers.end(); ++iter) {
+        /* try out opening the files with all available file opener functors */
+		for (auto iter = Openers.begin(); iter != Openers.end(); ++iter) {
 			try {
 				file = (*iter)(source, mMaxBlockSize);
 				break;
@@ -36,22 +35,29 @@ void FileList::add(const std::string& source) {
 			}
 		}
 		if (!file) {
-			fprintf(stderr, "Don't understand format of file %s, skipping.\n",
-				source.c_str());
+			std::cerr << "Don't understand format of file " << source.c_str() << ", skipping.\n";
 			return;
 		}
-		
-		std::string dest("/");
-		dest.append(file->destName());
-		mMap[dest] = file;		
+
+		const auto destPath = std::string("/") + file->destName();
+        if ( mMap.find( destPath ) != mMap.end() ) {
+            std::cerr
+            << "The archive '" << source << "' was to be mounted at the FUSE mount point"
+            << " at '" << destPath << "' but some other archives already is mounted"
+            << " at this path. Won't mount " << source << "!\n";
+            delete file;
+            file = nullptr;
+        } else  {
+            mMap[destPath] = file;
+        }
 	} catch (std::runtime_error& e) {
-		fprintf(stderr, "Error reading file %s, skipping: %s\n",
-			source.c_str(), e.what());
+		std::cerr << "Error reading file " << source.c_str() << ", skipping: " << e.what() << "\n";
 	}
 }
 
 FileList::~FileList() {
-	for (Map::iterator iter = mMap.begin(); iter != mMap.end(); ++iter) {
-		delete iter->second;
+    for ( auto& nameAndObject : mMap) {
+		delete nameAndObject.second;
+        nameAndObject.second = nullptr;
 	}
 }

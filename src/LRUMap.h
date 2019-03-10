@@ -1,9 +1,9 @@
-#ifndef LRUMAP_H
-#define LRUMAP_H
+#pragma once
 
 #include <functional>
 #include <list>
 #include <unordered_map>
+
 
 template <
 	typename Key,
@@ -85,5 +85,3 @@ public:
 		return &miter->second->value;
 	}
 };
-
-#endif // LRUMAP_H
