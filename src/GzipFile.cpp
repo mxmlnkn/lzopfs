@@ -6,6 +6,7 @@
 
 #include "Debug.h"
 #include "FileHandle.h"
+#include "GzipReader.h"
 #include "PathUtils.h"
 
 

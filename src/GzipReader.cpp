@@ -163,8 +163,6 @@ GzipBlockReader::GzipBlockReader( const FileHandle& fh,
 
 void SavingGzipReader::save()
 {
-    DEBUG( "%s start", __func__ );
-
     if ( !mSave ) {
         mSave = new PositionedGzipReader( mFH );
     }
@@ -187,8 +185,6 @@ void SavingGzipReader::save()
 
     mInitOutPos = mSave->opos();
     mOutBytes = 0;
-
-    DEBUG( "%s end", __func__ );
 }
 
 void SavingGzipReader::restore()

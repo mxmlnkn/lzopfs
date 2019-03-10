@@ -72,10 +72,18 @@ protected:
     void throwEx( const std::string& s,
                   int                err );
 
-    void resetOutBuf()
+    inline void resetOutBuf()
     {
         mStream.next_out = &outBuf()[0];
         mStream.avail_out = outBuf().size();
+
+        if ( mStream.next_out == nullptr ) {
+            std::cerr << "Output buffer location is null. Can't work with this!\n";
+        }
+
+        if ( mStream.avail_out == 0 ) {
+            std::cerr << "Available outbut buffer is empty. Can't work with this!\n";
+        }
     }
 
     /** only used by GzipBlockReader */
@@ -84,7 +92,7 @@ protected:
     void prime( uint8_t byte,
                 size_t  bits );
 
-    int step( int flush = Z_BLOCK );   // One iteration of inflate
+    int step( int flush = Z_BLOCK ); // One iteration of inflate
 
     int stepThrow( int flush = Z_BLOCK );
 
@@ -94,13 +102,33 @@ protected:
 
     virtual size_t chunkSize() const;
 
-    virtual Wrapper wrapper() const { return Raw; }
+    inline virtual Wrapper wrapper() const { return Raw; }
 
     virtual Buffer& outBuf() = 0;
 
-    virtual void writeOut()
+    inline virtual void writeOut()
     {
         throw std::runtime_error( "out of space in gzip output buffer" );
+    }
+
+    /** debug function */
+    inline static void
+    dumpStream( const z_stream& stream )
+    {
+        std::cerr
+        << "z_stream:\n"
+        << "  next input from                : " << (void*) stream.next_in << "\n"
+        << "  available input bytes          : " << stream.avail_in << "\n"
+        << "  input bytes already read       : " << stream.total_in << "\n"
+        << "\n"
+        << "  next output to                 : " << (void*) stream.next_out << "\n"
+        << "  remaining free output space    : " << stream.avail_out << "\n"
+        << "  output bytes already written   : " << stream.total_out << "\n"
+        << "\n"
+        << "  last error message             : " << ( stream.msg == nullptr ? "(null)" : stream.msg ) << "\n"
+        << "  data type guess                : " << stream.data_type << "\n"
+        << "  checksum for uncompressed data : " << stream.adler << "\n"
+        << "\n";
     }
 
 public:
@@ -123,6 +151,7 @@ public:
     inline virtual void
     reset( Wrapper w )
     {
+        dumpStream( mStream );
         CHECK_ZLIB( inflateReset2( &mStream, w ) );
     };
 
@@ -304,6 +333,7 @@ public:
                       off_t       opos = 0 ) :
         PositionedGzipReader( fh, opos )
     {
+        std::cerr << "Resize buffer to " << windowSize() << "\n";
         mOutBuf.resize( windowSize() );
     }
 

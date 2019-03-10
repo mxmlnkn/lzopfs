@@ -3,7 +3,6 @@
 #include "Block.h"
 #include "Buffer.h"
 #include "CompressedFile.h"
-#include "GzipReader.h"
 
 
 class GzipFile : public IndexedCompFile
@@ -39,7 +38,7 @@ protected:
                     Block*      b ) override; // True unless EOF
 
     void writeBlock( FileHandle&  fh,
-                             const Block *b ) const override;
+                     const Block *b ) const override;
 
 public:
     static const size_t WindowSize;
