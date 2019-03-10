@@ -33,7 +33,8 @@ public:
         BlockIteratorInner *mInner;
 
     public:
-        BlockIterator( BlockIteratorInner *i ) : mInner( i ) { }
+        BlockIterator( BlockIteratorInner *i ) :
+            mInner( i ) { }
 
         virtual ~BlockIterator()
         {
@@ -48,9 +49,11 @@ public:
 
         bool end() const { return mInner->end(); }
 
-        BlockIterator() : mInner( 0 ) { }
+        BlockIterator() :
+            mInner( 0 ) { }
 
-        BlockIterator( const BlockIterator& o ) : mInner( o.mInner->dup() ) { }
+        BlockIterator( const BlockIterator& o ) :
+            mInner( o.mInner->dup() ) { }
         BlockIterator &operator=( BlockIterator o )
         { std::swap( mInner, o.mInner ); return *this; }
     };
@@ -61,8 +64,9 @@ public:
         std::string file;
 
         FormatException( const std::string& f,
-                         const std::string& s )
-            : std::runtime_error( s ), file( f ) { }
+                         const std::string& s ) :
+            std::runtime_error( s ),
+            file( f ) { }
 
         ~FormatException() throw( ) { }
     };
@@ -75,7 +79,8 @@ protected:
     virtual void checkSizes( uint64_t maxBlock ) const;
 
 public:
-    CompressedFile( const std::string& path ) : mPath( path ) { }
+    CompressedFile( const std::string& path ) :
+        mPath( path ) { }
 
     virtual ~CompressedFile() { }
 
@@ -99,8 +104,8 @@ public:
 class IndexedCompFile : public CompressedFile
 {
 public:
-    IndexedCompFile( const std::string& path )
-        : CompressedFile( path ) { }
+    IndexedCompFile( const std::string& path ) :
+        CompressedFile( path ) { }
 
     virtual ~IndexedCompFile();
 
@@ -115,8 +120,9 @@ protected:
 
     public:
         Iterator( BlockList::const_iterator i,
-                  BlockList::const_iterator e )
-            : mIter( i ), mEnd( e ) { }
+                  BlockList::const_iterator e ) :
+            mIter( i ),
+            mEnd( e ) { }
 
         virtual void incr() { ++mIter; }
         virtual const Block& deref() const { return **mIter; }

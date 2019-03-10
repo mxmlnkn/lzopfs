@@ -137,8 +137,8 @@ void GzipFile::buildIndex( FileHandle& fh )
 }
 
 GzipFile::GzipFile( const std::string& path,
-                    uint64_t           maxBlock )
-    : IndexedCompFile( path )
+                    uint64_t           maxBlock ) :
+    IndexedCompFile( path )
 {
     initialize( maxBlock );
 }

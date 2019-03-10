@@ -248,7 +248,8 @@ void Bzip2File::buildIndex( FileHandle& fh )
                 level = 0;
             }
         }
-        ++i; ++j;
+        ++i;
+        ++j;
     }
 }
 

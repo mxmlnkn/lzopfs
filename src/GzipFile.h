@@ -17,8 +17,9 @@ protected:
 
         GzipBlock( off_t  uoff,
                    off_t  coff,
-                   size_t b )
-            : Block( 0, 0, uoff, coff ), bits( b ) { }
+                   size_t b ) :
+            Block( 0, 0, uoff, coff ),
+            bits( b ) { }
     };
 
     void setLastBlockSize( off_t uoff,

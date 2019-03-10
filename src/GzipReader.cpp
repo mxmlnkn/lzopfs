@@ -155,8 +155,9 @@ GzipBlockReader::GzipBlockReader( const FileHandle& fh,
                                   Buffer&           ubuf,
                                   const Block&      b,
                                   const Buffer&     dict,
-                                  size_t            bits )
-    : mOutBuf( ubuf ), mCFH( fh ),
+                                  size_t            bits ) :
+    mOutBuf( ubuf ),
+    mCFH( fh ),
     mPos( b.coff - ( bits ? 1 : 0 ) )
 {
     setDict( dict );

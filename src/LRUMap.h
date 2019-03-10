@@ -22,13 +22,17 @@ public:
 
         Entry( Key    k,
                Value  v,
-               Weight w ) : key( k ), value( v ), weight( w ) { }
+               Weight w ) :
+            key( k ),
+            value( v ),
+            weight( w ) { }
     };
 
     struct OverWeight : std::runtime_error
     {
 
-        OverWeight() : std::runtime_error( "LRUMap element too large" ) { }
+        OverWeight() :
+            std::runtime_error( "LRUMap element too large" ) { }
     };
 
 private:
@@ -60,7 +64,9 @@ private:
     }
 
 public:
-    LRUMap( Weight maxWeight ) : mWeight(), mMaxWeight( maxWeight ) { }
+    LRUMap( Weight maxWeight ) :
+        mWeight(),
+        mMaxWeight( maxWeight ) { }
 
     Weight weight() const { return mWeight; }
 

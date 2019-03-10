@@ -30,19 +30,23 @@ public:
         int error_code;
 
         Exception( const std::string& s,
-                   int                err )
-            : std::runtime_error( s ), error_code( err ) { }
+                   int                err ) :
+            std::runtime_error( s ),
+            error_code( err ) { }
     };
     struct EOFException : public virtual std::runtime_error
     {
 
-        EOFException( const std::string& s ) : std::runtime_error( s ) { }
+        EOFException( const std::string& s ) :
+            std::runtime_error( s ) { }
     };
 
     static void writeBuf( const Buffer&      b,
                           const std::string& path );
 
-    FileHandle( int fd = -1 ) : mFD( fd ), mOwnFD( false ) { }
+    FileHandle( int fd = -1 ) :
+        mFD( fd ),
+        mOwnFD( false ) { }
 
     FileHandle( const std::string& path,
                 int                flags,

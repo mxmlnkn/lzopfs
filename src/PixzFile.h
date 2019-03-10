@@ -27,9 +27,13 @@ protected:
         Iterator& operator=( const Iterator& o );
 
     public:
-        Iterator( lzma_index_iter *i ) : mIter( i ), mEnd( false ) { makeBlock(); }
+        Iterator( lzma_index_iter *i ) :
+            mIter( i ),
+            mEnd( false ) { makeBlock(); }
 
-        Iterator() : mIter( 0 ), mEnd( true ) { }
+        Iterator() :
+            mIter( 0 ),
+            mEnd( true ) { }
 
         virtual ~Iterator()
         {

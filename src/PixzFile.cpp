@@ -11,8 +11,9 @@
 const uint64_t PixzFile::MemLimit = UINT64_MAX;
 
 PixzFile::PixzFile( const std::string& path,
-                    uint64_t           maxBlock )
-    : CompressedFile( path ), mIndex( 0 )
+                    uint64_t           maxBlock ) :
+    CompressedFile( path ),
+    mIndex( 0 )
 {
     try {
         FileHandle fh( this->path(), O_RDONLY );

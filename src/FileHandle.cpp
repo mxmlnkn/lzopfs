@@ -18,8 +18,9 @@ void FileHandle::throwEx( const char *call,
 
 FileHandle::FileHandle( const std::string& path,
                         int                flags,
-                        mode_t             mode )
-    : mFD( -1 ), mOwnFD( false )
+                        mode_t             mode ) :
+    mFD( -1 ),
+    mOwnFD( false )
 {
     open( path, flags, mode );
 }

@@ -26,7 +26,8 @@ class Lock
     Mutex& mMutex;
 
 public:
-    Lock( Mutex& m ) : mMutex( m ) { mMutex.lock(); }
+    Lock( Mutex& m ) :
+        mMutex( m ) { mMutex.lock(); }
 
     ~Lock() { mMutex.unlock(); }
 };
@@ -67,7 +68,9 @@ protected:
         size_t num;
 
         ThreadInfo( ThreadPool *p = 0,
-                    size_t      n = 0 ) : pool( p ), num( n ) { }
+                    size_t      n = 0 ) :
+            pool( p ),
+            num( n ) { }
     };
     typedef std::vector<ThreadInfo> ThreadList;
     ThreadList mThreads;

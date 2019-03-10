@@ -29,7 +29,10 @@ struct FSData
     ThreadPool pool;
     BlockCache cache;
 
-    FSData( FileList* f ) : files( f ), pool(), cache( pool )
+    FSData( FileList* f ) :
+        files( f ),
+        pool(),
+        cache( pool )
     {
         cache.maxSize( CacheSize );
     }
@@ -73,7 +76,9 @@ struct DirFiller
     fuse_fill_dir_t filler;
 
     DirFiller( void *          b,
-               fuse_fill_dir_t f ) : buf( b ), filler( f ) { }
+               fuse_fill_dir_t f ) :
+        buf( b ),
+        filler( f ) { }
     void operator()( const std::string& path )
     {
         filler( buf, path.c_str() + 1, NULL, 0 );

@@ -24,8 +24,11 @@ protected:
         BlockBoundary( uint64_t m,
                        char     l,
                        off_t    c,
-                       size_t   b )
-            : magic( m ), level( l ), coff( c ), bits( b ) { }
+                       size_t   b ) :
+            magic( m ),
+            level( l ),
+            coff( c ),
+            bits( b ) { }
     };
     typedef std::list<BlockBoundary> BoundList;
 
@@ -40,9 +43,11 @@ protected:
                     BlockBoundary& end,
                     off_t          uoff,
                     size_t         usize,
-                    char           lev )
-            : Block( usize, end.coff - start.coff, uoff, start.coff ),
-            bits( start.bits ), endbits( end.bits ), level( lev ) { }
+                    char           lev ) :
+            Block( usize, end.coff - start.coff, uoff, start.coff ),
+            bits( start.bits ),
+            endbits( end.bits ),
+            level( lev ) { }
     };
 
     void findBlockBoundaryCandidates( FileHandle& fh,
@@ -79,8 +84,8 @@ public:
     { return new Bzip2File( path, maxBlock ); }
 
     Bzip2File( const std::string& path,
-               uint64_t           maxBlock )
-        : IndexedCompFile( path ) { initialize( maxBlock ); }
+               uint64_t           maxBlock ) :
+        IndexedCompFile( path ) { initialize( maxBlock ); }
 
     virtual std::string destName() const;
 

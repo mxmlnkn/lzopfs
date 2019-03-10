@@ -151,8 +151,8 @@ bool gLzopInited = false;
 }
 
 LzopFile::LzopFile( const std::string& path,
-                    uint64_t           maxBlock )
-    : IndexedCompFile( path )
+                    uint64_t           maxBlock ) :
+    IndexedCompFile( path )
 {
     if ( !gLzopInited ) {
         lzo_init();

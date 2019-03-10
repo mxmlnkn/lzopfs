@@ -31,7 +31,9 @@ protected:
         off_t offset;
 
         Key( OpenCompressedFile::FileID i,
-             off_t                      o ) : id( i ), offset( o ) { }
+             off_t                      o ) :
+            id( i ),
+            offset( o ) { }
         bool operator==( const Key& o ) const
         {
             return o.offset == offset && o.id == id;
@@ -54,8 +56,9 @@ protected:
         Key key;
 
         NeededBlock( const BlockIterator& bi,
-                     const Key&           k )
-            : biter( bi ), key( k ) { }
+                     const Key&           k ) :
+            biter( bi ),
+            key( k ) { }
     };
 
     struct JobInfo
@@ -70,8 +73,12 @@ protected:
                  const OpenCompressedFile& f,
                  Callback&                 pcb,
                  ConditionVariable&        pcv,
-                 size_t&                   r )
-            : cache( c ), file( f ), cb( pcb ), cv( pcv ), remain( r ) { }
+                 size_t&                   r ) :
+            cache( c ),
+            file( f ),
+            cb( pcb ),
+            cv( pcv ),
+            remain( r ) { }
     };
 
     struct Job : public ThreadPool::Job
@@ -80,7 +87,9 @@ protected:
         NeededBlock& block;
 
         Job( JobInfo&     i,
-             NeededBlock& b ) : info( i ), block( b ) { }
+             NeededBlock& b ) :
+            info( i ),
+            block( b ) { }
         virtual void operator()();
 
     };
@@ -94,8 +103,9 @@ protected:
 
 public:
     BlockCache( ThreadPool& pool,
-                size_t      maxSize = 0 )
-        : mMap( maxSize ), mPool( pool ) { }
+                size_t      maxSize = 0 ) :
+        mMap( maxSize ),
+        mPool( pool ) { }
 
     void maxSize( size_t s ) { mMap.maxWeight( s ); }
 

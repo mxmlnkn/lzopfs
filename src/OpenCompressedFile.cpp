@@ -5,7 +5,9 @@
 #include <cstring>
 
 OpenCompressedFile::OpenCompressedFile( const CompressedFile *file,
-                                        int                   openFlags ) : mFile( file ), mFH( file->path(), openFlags ) { }
+                                        int                   openFlags ) :
+    mFile( file ),
+    mFH( file->path(), openFlags ) { }
 
 void OpenCompressedFile::decompressBlock( const Block& b,
                                           Buffer&      ubuf ) const
@@ -24,8 +26,11 @@ struct Callback : public BlockCache::Callback
     Callback( off_t& m,
               char * b,
               size_t s,
-              off_t  o )
-        : max( m ), buf( b ), size( s ), offset( o ) { }
+              off_t  o ) :
+        max( m ),
+        buf( b ),
+        size( s ),
+        offset( o ) { }
 
     virtual void operator()( const Block&        block,
                              BlockCache::BufPtr& ubuf )

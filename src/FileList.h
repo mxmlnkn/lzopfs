@@ -28,8 +28,8 @@ private:
     static OpenerList initOpeners();
 
 public:
-    FileList( uint64_t maxBlockSize = UINT64_MAX )
-        : mMaxBlockSize( maxBlockSize ) { }
+    FileList( uint64_t maxBlockSize = UINT64_MAX ) :
+        mMaxBlockSize( maxBlockSize ) { }
 
     virtual ~FileList();
 

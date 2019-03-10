@@ -5,7 +5,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-ThreadPool::ThreadPool( size_t threads ) : mCancelling( false )
+ThreadPool::ThreadPool( size_t threads ) :
+    mCancelling( false )
 {
     Lock lock( mCond );
 

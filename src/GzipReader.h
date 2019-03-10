@@ -37,7 +37,9 @@ class GzipReaderBase
 public:
     struct Exception : std::runtime_error
     {
-        Exception( const std::string& s ) : std::runtime_error( s ) { }
+
+        Exception( const std::string& s ) :
+            std::runtime_error( s ) { }
     };
 
     enum Wrapper
@@ -50,6 +52,7 @@ public:
 private:
     // Disable copying
     GzipReaderBase( const GzipReaderBase& o ) = delete;
+
     GzipReaderBase& operator=( const GzipReaderBase& o ) = delete;
 
 protected:
@@ -125,7 +128,8 @@ protected:
     Buffer mOutBuf;
 
 public:
-    DiscardingGzipReader( FileHandle& fh ) : mFH( fh ) { }
+    DiscardingGzipReader( FileHandle& fh ) :
+        mFH( fh ) { }
 
     void swap( DiscardingGzipReader& o )
     {
@@ -154,8 +158,8 @@ protected:
 
 public:
     inline PositionedGzipReader( FileHandle& fh,
-                                 off_t       opos = 0 )
-      : DiscardingGzipReader( fh ),
+                                 off_t       opos = 0 ) :
+        DiscardingGzipReader( fh ),
         mInitOutPos( opos ),
         mWrap( opos ? Raw : Gzip )
     {}
@@ -186,7 +190,8 @@ public:
 class GzipHeaderReader : public GzipReaderInternal::DiscardingGzipReader
 {
 public:
-    GzipHeaderReader( FileHandle& fh ) : DiscardingGzipReader( fh ) { mOutBuf.resize( 1 ); }
+    GzipHeaderReader( FileHandle& fh ) :
+        DiscardingGzipReader( fh ) { mOutBuf.resize( 1 ); }
 
     inline size_t chunkSize() const override { return 512; }
 
@@ -236,8 +241,8 @@ protected:
 
 public:
     SavingGzipReader( FileHandle& fh,
-                      off_t       opos = 0 )
-        : PositionedGzipReader( fh, opos )
+                      off_t       opos = 0 ) :
+        PositionedGzipReader( fh, opos )
     {
         mOutBuf.resize( windowSize() );
     }
